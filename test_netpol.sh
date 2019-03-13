@@ -1,16 +1,38 @@
 #!/usr/bin/env bash
 
+AssertSuccess () {
+  if [ $? -ne 0 ]; then
+    echo "############"
+    echo "### FAIL ###"
+    echo "############"
+  else
+    echo "SUCCESS"
+  fi
+}
+
+AssertFailure () {
+  if [ $? -eq 0 ]; then
+    echo "############"
+    echo "### FAIL ###"
+    echo "############"
+  else
+    echo "SUCCESS"
+  fi
+}
+
+echo ""
+########################################################################################
 echo "pods in same ns (no policy) - expected 200"
+########################################################################################
 kubectl create deployment hello --image=gcr.io/hello-minikube-zero-install/hello-node 
 kubectl expose deployment hello --type=ClusterIP --port=8080
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 
+echo ""
+########################################################################################
 echo "pods in same ns (block policy) - expected timeout"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -30,14 +52,14 @@ spec:
           role: frontend
 EOF
 kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -eq 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+
+AssertFailure
 kubectl delete networkpolicy default.block-hello
 
+echo ""
+########################################################################################
 echo "add an allow-all policy to override the more specific one - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -51,16 +73,14 @@ spec:
   policyTypes:
   - Ingress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 kubectl delete networkpolicy allow-all
 
-
+echo ""
+########################################################################################
 echo "pods in same ns (allow policy) - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -79,24 +99,22 @@ spec:
         matchLabels:
           run: curl
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 kubectl delete networkpolicy default.allow-hello
 
+echo ""
+########################################################################################
 echo "client in another ns (default policy allows cross-namespace comms) - expected 200"
+########################################################################################
 kubectl create namespace second
-kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
+AssertSuccess
 
+echo ""
+########################################################################################
 echo "client in another ns (deny policy) - expected timeout"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -109,16 +127,15 @@ spec:
   - Ingress
 EOF
 kubectl label namespace second namespace=second
-kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
-if [ $? -eq 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
+AssertFailure
 kubectl delete networkpolicy default.deny
 kubectl label namespace second namespace-
 
+echo ""
+########################################################################################
 echo "policy with OR (using two froms) - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -141,21 +158,18 @@ spec:
   policyTypes:
   - Ingress
 EOF
-kubectl run -it --rm --restart=Never curl1 --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
-kubectl run -it --rm --restart=Never curl2 --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl1 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
+
+kubectl run -it --rm --restart=Never curl2 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
+
 kubectl delete networkpolicy default.postgres
 
+echo ""
+########################################################################################
 echo "policy with OR (using two podSelectors) - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -177,22 +191,18 @@ spec:
   policyTypes:
   - Ingress
 EOF
-kubectl run -it --rm --restart=Never curl1 --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
-kubectl run -it --rm --restart=Never curl2 --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl1 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
+
+kubectl run -it --rm --restart=Never curl2 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
+
 kubectl delete networkpolicy default.postgres
 
-
+echo ""
+########################################################################################
 echo "egress without DNS - expected timeout"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -211,15 +221,14 @@ spec:
   policyTypes:
   - Egress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -eq 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertFailure
 kubectl delete networkpolicy default.balance
 
+echo ""
+########################################################################################
 echo "egress with DNS - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -242,15 +251,14 @@ spec:
   policyTypes:
   - Egress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 kubectl delete networkpolicy default.balance
 
+echo ""
+########################################################################################
 echo "egress with a specific DNS policy - expected 200"
+########################################################################################
 kubectl label namespace kube-system namespace=k8s
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
@@ -277,16 +285,56 @@ spec:
   policyTypes:
   - Egress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 kubectl delete networkpolicy default.balance
 kubectl label namespace kube-system namespace-
 
+echo ""
+########################################################################################
+echo "egress all, allows access to the internet - expected 200"
+########################################################################################
+cat <<EOF | kubectl create -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-egress
+spec:
+  podSelector: {}
+  egress:
+  - {}
+  policyTypes:
+  - Egress
+EOF
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
+AssertSuccess
+kubectl delete networkpolicy allow-all-egress
+
+echo ""
+########################################################################################
+echo "egress to all pods, prohibits access to the internet - expected timeout"
+########################################################################################
+cat <<EOF | kubectl create -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-all-pods
+spec:
+  podSelector: {}
+  egress:
+  - to:
+    - podSelector: {}
+  policyTypes:
+  - Egress
+EOF
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
+AssertFailure
+kubectl delete networkpolicy allow-egress-all-pods
+
+echo ""
+########################################################################################
 echo "deny all policy - expected timeout"
+########################################################################################
 cat <<EOF | kubectl create -f -
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -298,15 +346,14 @@ spec:
   policyTypes:
   - Ingress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -eq 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertFailure
 kubectl delete networkpolicy deny-all
 
+echo ""
+########################################################################################
 echo "allow all from the same namespace - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -320,23 +367,21 @@ spec:
   policyTypes:
   - Ingress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 
+echo ""
+########################################################################################
 echo "allow all from another namespace - expected 200"
-kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+########################################################################################
+kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
+AssertSuccess
 kubectl delete networkpolicy allow-all
 
+echo ""
+########################################################################################
 echo "allow all to a specific namespace - expected 200"
+########################################################################################
 cat <<EOF | kubectl create -f -
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -352,12 +397,8 @@ spec:
   policyTypes:
   - Ingress
 EOF
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
-if [ $? -ne 0 ]; then
-  echo "### FAIL ###"
-else
-  echo "### SUCCESS ###"
-fi
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+AssertSuccess
 kubectl delete networkpolicy allow-all-to-hello
 
 
