@@ -20,18 +20,20 @@ AssertFailure () {
   fi
 }
 
-echo ""
-########################################################################################
-echo "pods in same ns (no policy) - expected 200"
-########################################################################################
+# deploy client and service
 kubectl create deployment hello --image=gcr.io/hello-minikube-zero-install/hello-node 
 kubectl expose deployment hello --type=ClusterIP --port=8080
 kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+
+echo ""
+########################################################################################
+echo "pods in same namespace (no policy) - expected 200"
+########################################################################################
 AssertSuccess
 
 echo ""
 ########################################################################################
-echo "pods in same ns (block policy) - expected timeout"
+echo "pods in same namespace (block policy) - expected timeout"
 ########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
@@ -79,7 +81,7 @@ kubectl delete networkpolicy allow-all
 
 echo ""
 ########################################################################################
-echo "pods in same ns (allow policy) - expected 200"
+echo "pods in same namespace (allow policy) - expected 200"
 ########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
@@ -105,7 +107,7 @@ kubectl delete networkpolicy default.allow-hello
 
 echo ""
 ########################################################################################
-echo "client in another ns (default policy allows cross-namespace comms) - expected 200"
+echo "client in another namespace (default policy allows cross-namespace comms) - expected 200"
 ########################################################################################
 kubectl create namespace second
 kubectl run --namespace second -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello.default.svc.cluster.local:8080
@@ -113,7 +115,7 @@ AssertSuccess
 
 echo ""
 ########################################################################################
-echo "client in another ns (deny policy) - expected timeout"
+echo "client in another namespace (deny policy) - expected timeout"
 ########################################################################################
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
@@ -248,6 +250,8 @@ spec:
     ports:
     - protocol: UDP
       port: 53
+    - protocol: UDP
+      port: 54 # open 54 too in case tufindns is installed
   policyTypes:
   - Egress
 EOF
@@ -299,6 +303,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-all-egress
+  namespace: default
 spec:
   podSelector: {}
   egress:
@@ -401,13 +406,38 @@ kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- 
 AssertSuccess
 kubectl delete networkpolicy allow-all-to-hello
 
+echo ""
+########################################################################################
+echo "allow egress to any pod, but external IPs are still blocked - expected timeout"
+########################################################################################
+cat <<EOF | kubectl create -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: foo-deny-external-egress
+spec:
+  podSelector:
+    matchLabels:
+      run: curl
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 54
+      protocol: UDP
+  - to:
+    - namespaceSelector: {}
+EOF
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
+AssertFailure
+kubectl delete networkpolicy foo-deny-external-egress
 
-#kubectl run -it --rm --restart=Never busybox --image=busybox wget svc1:8080
-#kubectl run -it --rm --restart=Never curl --image=giantswarm/tiny-tools curl http://hello-node:8080
 
 # cleanup
+echo ""
 kubectl delete service --all
 kubectl delete deployment --all
-#kubectl delete pod --all
 kubectl delete networkpolicy --all
 kubectl delete namespace second

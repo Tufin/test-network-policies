@@ -11,6 +11,11 @@ kubectl apply -f calico.yaml
 kubectl get node (wait till it is ready)
 ```
 
+Run tests:
+```
+./test_netpol.sh
+```
+
 Using calicoctl:
 ```
 minikube ssh
