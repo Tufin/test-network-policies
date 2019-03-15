@@ -422,11 +422,15 @@ spec:
   policyTypes:
   - Egress
   egress:
-  - ports:
+  - to:
+    - namespaceSelector: {}
+    ports:
     - port: 53
       protocol: UDP
     - port: 54
       protocol: UDP
+    - port: 80
+      protocol: TCP
   - to:
     - namespaceSelector: {}
 EOF
