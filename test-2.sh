@@ -1,4 +1,4 @@
-echo "pods in same namespace (block policy) - expected timeout"
+echo "pods in same namespace (policy doesn't allow) - expected timeout"
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

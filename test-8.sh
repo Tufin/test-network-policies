@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "client in another namespace (policy allows access from default namespace only) - expected timeout"
+echo "client in another namespace (policy allows access from same namespace only) - expected timeout"
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
