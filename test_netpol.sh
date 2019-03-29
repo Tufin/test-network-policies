@@ -23,12 +23,12 @@ AssertFailure () {
 # deploy client and service
 kubectl create deployment hello --image=gcr.io/hello-minikube-zero-install/hello-node 
 kubectl expose deployment hello --type=ClusterIP --port=8080
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
 
 echo ""
 ########################################################################################
 echo "pods in same namespace (no policy) - expected 200"
 ########################################################################################
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
 AssertSuccess
 
 echo ""
