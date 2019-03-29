@@ -15,11 +15,3 @@ Run tests:
 ```
 ./test_netpol.sh
 ```
-
-Using calicoctl:
-```
-minikube ssh
-sudo curl -O -L  https://github.com/projectcalico/calicoctl/releases/download/v3.5.1/calicoctl
-sudo chmod +x calicoctl
-ETCD_ENDPOINTS=http://0.0.0.0:6666 calicoctl get globalNetworkPolicy -o yaml
-```
