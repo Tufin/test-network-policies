@@ -24,6 +24,9 @@ AssertFailure () {
 kubectl create deployment hello --image=gcr.io/hello-minikube-zero-install/hello-node 
 kubectl expose deployment hello --type=ClusterIP --port=8080
 
+while [[ $(kubectl get pods -l app=hello -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
+
+
 echo ""
 ########################################################################################
 echo "pods in same namespace (no policy) - expected 200"
