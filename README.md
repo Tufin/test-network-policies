@@ -8,9 +8,9 @@ curl -O -L https://docs.projectcalico.org/v3.1/getting-started/kubernetes/instal
 sed -i -e '/nodeSelector/d' calico.yaml
 sed -i -e '/node-role.kubernetes.io\/master: ""/d' calico.yaml
 kubectl apply -f calico.yaml
-kubectl get node
+kubectl get node -w
 ```
-Wait till it is ready...
+Wait till STATUS=Ready...
 
 Run all tests:
 ```

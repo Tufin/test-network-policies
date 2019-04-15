@@ -16,10 +16,10 @@ spec:
   - to:
     - namespaceSelector: {}
     ports:
-    - port: 53
-      protocol: UDP
-    - port: 54
-      protocol: UDP
+    - protocol: UDP
+      port: 53
+    - protocol: UDP
+      port: 54 # open 54 too in case tufindns is installed
     - port: 80
       protocol: TCP
   - to:
