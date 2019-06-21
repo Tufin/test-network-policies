@@ -10,24 +10,46 @@ AssertSuccess () {
   fi
 }
 
-# deploy "hello" service
+CleanupNetworkPolicies () {
+  for ns in $(kubectl get ns -o jsonpath="{.items[*].metadata.name}"); do
+    for np in $(kubectl get networkpolicies --namespace $ns -o jsonpath="{.items[*].metadata.name}"); do
+      kubectl delete networkpolicies $np
+    done
+  done
+}
+
+if [ "$1" != "" ]; then
+  test_file=$1
+fi
+
+echo ""
+echo "deploying 'hello' service ..."
 kubectl create deployment hello --image=gcr.io/hello-minikube-zero-install/hello-node 
 kubectl expose deployment hello --type=ClusterIP --port=8080
 
-# create "second" namespace
+echo ""
+echo "creating 'second' namespace ..."
 kubectl create namespace second
 kubectl label namespace second namespace=second
 
-# wait for hello pod to be ready
+echo ""
+echo "waiting for hello pod to be ready..."
 while [[ $(kubectl get pods -l app=hello -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
 
+echo ""
+echo "running tests..."
 for f in test-*.sh; do  
-  echo ""
-  bash "$f" -H
-  AssertSuccess $?
+  if [ "$test_file" = "" ] || [ "$f" = "$test_file" ]; then
+    echo ""
+    echo "$f"
+    bash "$f" -H
+    AssertSuccess $?
+    CleanupNetworkPolicies
+  fi
 done
 
-# cleanup
+echo ""
+echo "cleaning up..."
 kubectl delete service --all
 kubectl delete deployment --all
 kubectl delete networkpolicy --all

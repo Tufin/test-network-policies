@@ -34,10 +34,8 @@ spec:
   policyTypes:
   - Ingress
 EOF
+
 kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
 success=$?
-
-kubectl delete networkpolicy default.block-hello
-kubectl delete networkpolicy allow-all
 
 exit $success

@@ -16,3 +16,8 @@ Run all tests:
 ```
 ./test_netpol.sh
 ```
+
+Run specific test:
+```
+./test_netpol.sh <test-file>
+```

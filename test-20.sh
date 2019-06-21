@@ -25,9 +25,8 @@ spec:
   - to:
     - namespaceSelector: {}
 EOF
+
 ! kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
 success=$?
-
-kubectl delete networkpolicy foo-deny-external-egress
 
 exit $success

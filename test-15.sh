@@ -14,9 +14,8 @@ spec:
   policyTypes:
   - Egress
 EOF
+
 ! kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
 success=$?
-
-kubectl delete networkpolicy allow-egress-all-pods
 
 exit $success
