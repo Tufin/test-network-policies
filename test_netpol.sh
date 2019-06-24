@@ -23,12 +23,48 @@ if [ "$1" != "" ]; then
 fi
 
 echo ""
-echo "deploying 'hello' service ..."
-kubectl create deployment hello --image=gcr.io/hello-minikube-zero-install/hello-node 
-kubectl expose deployment hello --type=ClusterIP --port=8080
+echo "deleting any leftover 'curl' pods..."
+kubectl delete pod curl
 
 echo ""
-echo "creating 'second' namespace ..."
+echo "resetting network policies..."
+CleanupNetworkPolicies
+
+echo ""
+echo "creating 'hello' deployment..."
+cat <<EOF | kubectl create -f -
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: hello
+  name: hello
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
+        app: hello
+    spec:
+      containers:
+      - image: gcr.io/hello-minikube-zero-install/hello-node
+        imagePullPolicy: Always
+        name: hello-node
+        ports:
+        - containerPort: 8080
+          name: http
+EOF
+
+echo ""
+echo "creating 'hello' and service..."
+kubectl expose deployment hello --type=ClusterIP --port=8080 --target-port=http 
+
+echo ""
+echo "creating 'second' namespace..."
 kubectl create namespace second
 kubectl label namespace second namespace=second
 
@@ -50,7 +86,8 @@ done
 
 echo ""
 echo "cleaning up..."
-kubectl delete service --all
-kubectl delete deployment --all
-CleanupNetworkPolicies
+kubectl delete service hello
+kubectl delete deployment hello
 kubectl delete namespace second
+
+

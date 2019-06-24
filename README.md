@@ -19,5 +19,6 @@ Run all tests:
 
 Run specific test:
 ```
-./test_netpol.sh <test-file>
+# pass relative path to test file as argument
+./test_netpol.sh tests/alllow-all-without-internet.sh 
 ```
