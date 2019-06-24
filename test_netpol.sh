@@ -11,7 +11,7 @@ AssertSuccess () {
 }
 
 CleanupNetworkPolicies () {
-  for ns in $(kubectl get ns -o jsonpath="{.items[*].metadata.name}"); do
+  for ns in $(kubectl get namespace -o jsonpath="{.items[*].metadata.name}"); do
     for np in $(kubectl get networkpolicies --namespace $ns -o jsonpath="{.items[*].metadata.name}"); do
       kubectl delete networkpolicies $np
     done
@@ -38,7 +38,7 @@ while [[ $(kubectl get pods -l app=hello -o 'jsonpath={..status.conditions[?(@.t
 
 echo ""
 echo "running tests..."
-for f in test-*.sh; do  
+for f in tests/*; do  
   if [ "$test_file" = "" ] || [ "$f" = "$test_file" ]; then
     echo ""
     echo "$f"
@@ -52,5 +52,5 @@ echo ""
 echo "cleaning up..."
 kubectl delete service --all
 kubectl delete deployment --all
-kubectl delete networkpolicy --all
+CleanupNetworkPolicies
 kubectl delete namespace second
