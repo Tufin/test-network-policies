@@ -13,7 +13,7 @@ AssertSuccess () {
 CleanupNetworkPolicies () {
   for ns in $(kubectl get namespace -o jsonpath="{.items[*].metadata.name}"); do
     for np in $(kubectl get networkpolicies --namespace $ns -o jsonpath="{.items[*].metadata.name}"); do
-      kubectl delete networkpolicies $np
+      kubectl delete networkpolicies $np --namespace $ns
     done
   done
 }
