@@ -18,7 +18,7 @@ spec:
           role: frontend
 EOF
 
-! kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:8080
+! kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 10 -s -o /dev/null -w "%{http_code}" hello:80
 success=$?
 
 exit $success 

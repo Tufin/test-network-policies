@@ -60,8 +60,8 @@ spec:
 EOF
 
 echo ""
-echo "creating 'hello' and service..."
-kubectl expose deployment hello --type=ClusterIP --port=8080 --target-port=http 
+echo "creating 'hello' service..."
+kubectl expose deployment hello --type=ClusterIP --port=80 --target-port=http
 
 echo ""
 echo "creating 'second' namespace..."

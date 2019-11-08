@@ -23,10 +23,10 @@ spec:
   - Ingress
 EOF
 
-kubectl run -it --rm --restart=Never curl1 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+kubectl run -it --rm --restart=Never curl1 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:80
 success1=$?
 
-kubectl run -it --rm --restart=Never curl2 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:8080
+kubectl run -it --rm --restart=Never curl2 --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" hello:80
 success2=$?
 
 [[ $success1 = 0 ]] && [[ $success2 = 0 ]] ; success=$?
