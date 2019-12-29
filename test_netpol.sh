@@ -33,7 +33,7 @@ CleanupNetworkPolicies
 echo ""
 echo "creating 'hello' deployment..."
 cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1 
 kind: Deployment
 metadata:
   labels:
