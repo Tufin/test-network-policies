@@ -53,7 +53,7 @@ spec:
       containers:
       - image: gcr.io/hello-minikube-zero-install/hello-node
         imagePullPolicy: Always
-        name: hello-node
+        name: hello
         ports:
         - containerPort: 8080
           name: http
