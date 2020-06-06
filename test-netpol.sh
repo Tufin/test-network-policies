@@ -6,7 +6,9 @@ AssertSuccess () {
     echo "### FAIL ###"
     echo "############"
   else
-    echo "SUCCESS"
+    echo "###########"
+    echo "# SUCCESS #"
+    echo "###########"
   fi
 }
 
@@ -51,11 +53,11 @@ spec:
         app: hello
     spec:
       containers:
-      - image: gcr.io/hello-minikube-zero-install/hello-node
+      - image: rancher/hello-world
         imagePullPolicy: Always
         name: hello
         ports:
-        - containerPort: 8080
+        - containerPort: 80
           name: http
 EOF
 
@@ -71,6 +73,7 @@ kubectl label namespace second namespace=second
 echo ""
 echo "waiting for hello pod to be ready..."
 while [[ $(kubectl get pods -l app=hello -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
+echo "pod is ready"
 
 echo ""
 echo "running tests..."
