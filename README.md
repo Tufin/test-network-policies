@@ -18,7 +18,7 @@ Run all tests:
 ./test-netpol.sh
 ```
 
-You should "SUCCESS" after each test.
+You should see "SUCCESS" after each test.
 If you see "FAIL" then something went wrong.  
 If you think its a bug, please submit an issue with the kubernetes and CNI platform/version details, and the failing test.
 
