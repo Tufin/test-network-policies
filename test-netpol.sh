@@ -20,17 +20,22 @@ CleanupNetworkPolicies () {
   done
 }
 
+Cleanup () {
+  echo ""
+  echo "cleaning up..."
+  kubectl delete service hello
+  kubectl delete deployment hello
+  kubectl delete namespace second
+  kubectl delete pod curl
+  kubectl delete pod ping
+  CleanupNetworkPolicies
+}
+
 if [ "$1" != "" ]; then
   test_file=$1
 fi
 
-echo ""
-echo "deleting any leftover 'curl' pods..."
-kubectl delete pod curl
-
-echo ""
-echo "resetting network policies..."
-CleanupNetworkPolicies
+Cleanup
 
 echo ""
 echo "creating 'hello' deployment..."
@@ -87,10 +92,4 @@ for f in tests/*; do
   fi
 done
 
-echo ""
-echo "cleaning up..."
-kubectl delete service hello
-kubectl delete deployment hello
-kubectl delete namespace second
-
-
+Cleanup
