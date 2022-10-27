@@ -77,12 +77,12 @@ kubectl label namespace second namespace=second
 
 echo ""
 echo "waiting for hello pod to be ready..."
-while [[ $(kubectl get pods -l app=hello -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
+kubectl rollout -n default status deployment hello
 echo "pod is ready"
 
 echo ""
 echo "running tests..."
-for f in tests/*; do  
+for f in tests/*; do
   if [ "$test_file" = "" ] || [ "$f" = "$test_file" ]; then
     echo ""
     echo "$f"

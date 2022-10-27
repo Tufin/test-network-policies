@@ -19,7 +19,7 @@ spec:
 EOF
 
 # egress only allowed to 1.1.1.1 - access to google should fail
-! kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
+! kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl ${CURL_PROXY} --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
 success1=$?
 
 cat <<EOF | kubectl create -f -
@@ -37,7 +37,7 @@ spec:
 EOF
 
 # egress allowed to everything - access to internet should succeed
-kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
+kubectl run -it --rm --restart=Never curl --image=appropriate/curl --command -- curl ${CURL_PROXY} --max-time 3 -s -o /dev/null -w "%{http_code}" www.google.com
 success2=$?
 
 [[ $success1 = 0 ]] && [[ $success2 = 0 ]] ; success=$?
