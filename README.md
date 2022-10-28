@@ -13,8 +13,9 @@ Make sure you are connected to your cluster as cluster admin.
 
 ## Running the tests
 
-Run all tests:
+Run all tests (with proxy):
 ```
+# CURL_PROXY="-x 10.0.1.10:3128"
 ./test-netpol.sh
 ```
 
